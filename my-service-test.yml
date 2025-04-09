@@ -1,0 +1,14 @@
+config:
+  target: "https://localhost:443"  # Cambia esto si tu API está en otro lado
+  phases:
+    - duration: 60  # duración de la prueba (segundos)
+      arrivalRate: 5  # usuarios que llegan por segundo
+  defaults:
+    headers:
+      Authorization: "Bearer admin-token"  # Token de prueba (ajústalo según tu app)
+
+scenarios:
+  - name: Prueba de ruta protegida
+    flow:
+      - get:
+          url: "https://localhost:443/"  # Cambia esto por tu endpoint real

@@ -1,16 +1,33 @@
 const { Pool } = require('pg'); 
-const pool = new Pool({
-    port: process.env.PORT_DB,    
-    host: process.env.HOST_DB,    
-    user: process.env.USER_DB,    
-    password: process.env.PASSWORD_DB,  
+const poolLocal = new Pool({
+    port: process.env.PORT_DB,
+    host: process.env.HOST_DB,
+    user: process.env.USER_DB,
+    password: process.env.PASSWORD_DB,
     database: process.env.NAME_DB,
-}); 
-
-pool.connect()
-    .then(() => console.log('Conexión exitosa con menu '))
-    .catch((error) => console.error('Error al conectar con menu ')); 
-
+  });
+  
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: false
+  }); 
+  
+  try {
+    // Intentamos conectar con la base de datos del servidor
+    pool.connect()
+      .then((res) => {
+        console.log('Conexión prod exitosa con menu');
+      })
+      .catch((error) => {
+        console.error('Error al conectar con menu en el servidor. Intentando conexión local...');
+        poolLocal.connect()
+          .then(() => console.log('Conexión local exitosa con menu'))
+          .catch((message) => console.log('Error al conectar con la base de datos local'));
+      });
+  } catch (error) {
+    // Este bloque se ejecutará si hay errores en el intento de conexión (aunque lo hemos capturado en el .catch)
+    console.error('Error general al intentar conectar a las bases de datos');
+  }
 
 
 // Obtener todos los productos con sus tamaños y precios

@@ -1,165 +1,150 @@
 const { Pool } = require('pg'); 
 const bcrypt = require('bcryptjs'); 
 
+// Configuración de conexión a la base de datos
+const poolLocal = new Pool({
+  port: process.env.PORT_DB,
+  host: process.env.HOST_DB,
+  user: process.env.USER_DB,
+  password: process.env.PASSWORD_DB,
+  database: process.env.NAME_DB,
+});
+
 const pool = new Pool({
-    port: process.env.PORT_DB,    
-    host: process.env.HOST_DB,    
-    user: process.env.USER_DB,    
-    password: process.env.PASSWORD_DB,  
-    database: process.env.NAME_DB,
+  connectionString: process.env.DATABASE_URL,
+  ssl: false
 }); 
 
-pool.connect()
-    .then(() => console.log('Conexión exitosa con usuario '))
-    .catch((error) => console.error('Error al conectar con usuario ')); 
+try {
+  // Intentamos conectar con la base de datos del servidor
+  pool.connect()
+    .then((res) => {
+      console.log('Conexión prod exitosa con usuarios');
+    })
+    .catch((error) => {
+      console.error('Error al conectar con usuarios en el servidor. Intentando conexión local...');
+      poolLocal.connect()
+        .then(() => console.log('Conexión local exitosa con usuarios'))
+        .catch((message) => console.log('Error al conectar con la base de datos local'));
+    });
+} catch (error) {
+  // Este bloque se ejecutará si hay errores en el intento de conexión (aunque lo hemos capturado en el .catch)
+  console.error('Error general al intentar conectar a las bases de datos');
+}
 
-// Login 
+// Login de usuario: valida email y contraseña
 const login = async (email, password) => {
-    return new Promise((resolve, reject) => {
-        // Buscamos el usuario solo por su email
-        const sql = 'SELECT * FROM users WHERE email = $1';
-        pool.query(sql, [email], async (error, results) => {
-            if (error) {
-                return reject(error); 
-            }
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users WHERE email = $1';
+    pool.query(sql, [email], async (error, results) => {
+      if (error) return reject(error);
+      if (results.rows.length === 0) return reject('Error: Usuario no encontrado');
 
-            // Verificamos si el usuario existe
-            if (results.rows.length === 0) {
-                return reject('Error: Usuario no encontrado'); 
-            }
-
-            const user = results.rows[0]; // El primer usuario que coincide con el email
-
-            console.log('Conraseña proporcionada: ', password); 
-            console.log('Contraseña encriptada', user.password); 
-
-            // Comparamos la contraseña encriptada con la proporcionada
-            const isMatch = await bcrypt.compare(password, user.password); 
-            console.log('¿Las contraseñas coinciden?', isMatch); 
-
-            if (isMatch) {
-                resolve(user);  // Si la contraseña es correcta, devolvemos el usuario
-            } else {
-                reject('Contraseña incorrecta');  // Si la contraseña no coincide
-            }
-        }); 
-    }); 
+      const user = results.rows[0];
+      const isMatch = await bcrypt.compare(password, user.password);
+      isMatch ? resolve(user) : reject('Contraseña incorrecta');
+    });
+  });
 };
 
-
+// Obtener todos los usuarios
 const getAllUsers = async () => {
-    return new Promise((resolve, reject) => {
-        const sql = ('Select * from users '); 
-        pool.query(sql, (error, results) => {
-            if(error){
-                return reject(error); 
-            }
-            resolve(results.rows); 
-        }); 
-    }); 
-}   
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users';
+    pool.query(sql, (error, results) => {
+      if (error) return reject(error);
+      resolve(results.rows);
+    });
+  });
+};
 
-const getOneUser = async(id) => {
-    return new Promise((resolve, reject) => {
-        const sql = ('Select * from users where id = $1'); 
-        pool.query(sql, [id], (error, results) => {
-            if(error){
-                return reject(error); 
-            }
-            resolve(results.rows);
-        }); 
-    }); 
-}
+// Obtener usuario por ID
+const getOneUser = async (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users WHERE id = $1';
+    pool.query(sql, [id], (error, results) => {
+      if (error) return reject(error);
+      resolve(results.rows);
+    });
+  });
+};
 
+// Crear nuevo usuario con contraseña cifrada
 const createUser = async (fullname, email, password) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const salt = await bcrypt.genSalt(10); 
-            const hashedPassword = await bcrypt.hash(password, salt); 
+  return new Promise(async (resolve, reject) => {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      const sql = 'INSERT INTO users (fullname, email, password) VALUES ($1, $2, $3)';
+      pool.query(sql, [fullname, email, hashedPassword], (error) => {
+        if (error) return reject(error);
+        resolve('Usuario agregado');
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
-            const sql = ('Insert into users (fullname, email, password) values ($1, $2, $3)'); 
-            pool.query(sql, [fullname, email, hashedPassword], (error) => {
-                if(error){
-                    return reject(error); 
-                }
-                resolve('Usuario agregado'); 
-            });
-        } catch (error){
-            reject(error); 
-        }
-    }); 
-}
-
+// Verificar si un email ya está registrado
 const checkEmail = async (email) => {
-    return new Promise((resolve, reject) => {
-        const sql = ('Select * from users where email = $1'); 
-        pool.query(sql, [email], (error, results) => {
-            if(error){
-                return reject(error);
-            }
-            resolve(results.rows); 
-        }); 
-    }); 
-}
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users WHERE email = $1';
+    pool.query(sql, [email], (error, results) => {
+      if (error) return reject(error);
+      resolve(results.rows);
+    });
+  });
+};
 
+// Verificar si el nombre de usuario ya existe
+const checkUsername = async (fullname) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users WHERE fullname = $1';
+    pool.query(sql, [fullname], (error, results) => {
+      if (error) return reject(error);
+      resolve(results.rows);
+    });
+  });
+};
 
-const checkUsername = async(fullname) => {
-    return new Promise((resolve, reject) => {
-        const sql = ('Select * from users where fullname = $1'); 
-        pool.query(sql, [fullname], (error, results) => {
-            if(error){
-                return reject(error); 
-            }
-        }); 
-        resolve(results.rows);
-    }); 
-}
-
+// Buscar usuario por email y devolver uno solo
 const findOneByEmail = async (email) => {
-    return new Promise((resolve, reject) => {
-        const sql = 'SELECT * FROM users WHERE email = $1';
-        pool.query(sql, [email], (error, results) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(results.rows.length > 0 ? results.rows[0] : null); 
-        });
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM users WHERE email = $1';
+    pool.query(sql, [email], (error, results) => {
+      if (error) return reject(error);
+      resolve(results.rows.length > 0 ? results.rows[0] : null);
     });
+  });
 };
-// Propiedad de Jesús Morales 
 
+// Cambiar contraseña de un usuario (con hash)
 const changePass = async (email, newPassword) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            // Generar el hash de la nueva contraseña
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-            const sql = "UPDATE users SET password = $1 WHERE email = $2 RETURNING *";
-
-            // Ejecutar la consulta en la base de datos
-            pool.query(sql, [hashedPassword, email], (error, results) => {
-                if (error) {
-                    return reject(error);
-                }
-                if (results.rowCount === 0) {
-                    return reject("Usuario no encontrado");
-                }
-                resolve("Contraseña actualizada correctamente");
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      const sql = "UPDATE users SET password = $1 WHERE email = $2 RETURNING *";
+      pool.query(sql, [hashedPassword, email], (error, results) => {
+        if (error) return reject(error);
+        if (results.rowCount === 0) return reject("Usuario no encontrado");
+        resolve("Contraseña actualizada correctamente");
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
 
+// Propiedad de Jesús Morales
 module.exports = {
-    login, 
-    getAllUsers, 
-    getOneUser, 
-    createUser,
-    checkEmail,
-    checkUsername,
-    findOneByEmail, 
-    changePass
-}
+  login,
+  getAllUsers,
+  getOneUser,
+  createUser,
+  checkEmail,
+  checkUsername,
+  findOneByEmail,
+  changePass,
+};

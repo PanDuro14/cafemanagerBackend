@@ -1,16 +1,18 @@
 const express = require('express'); 
 const router = express.Router(); 
 const cuentasController = require('../../controller/cuentaController'); 
+const verifyToken = require('../../middlewares/authMiddleware'); 
 
-router  
-    .get('/byid/:id', cuentasController.getOneCuentaById)
-    .get('/byname/:nombre', cuentasController.getOneCuentaByName)
-    .post('/addProd/:id', cuentasController.addProdToCuenta)
-    .post('/removeProd/:id', cuentasController.removeProd)
-    .post('/byStatus', cuentasController.getByStatus)
-    .get('/', cuentasController.getAllCuentas)
-    .post('/', cuentasController.createOneCuenta)
-    .put('/:id', cuentasController.updateCuenta)
-    .delete('/:id', cuentasController.deleteCuenta);
+// Propiedad de Jesús Emmanuel Morales Ruvalcaba
+router
+  .get('/byid/:id', cuentasController.getOneCuentaById)        // obtener cuenta por ID
+  .get('/byname/:nombre', cuentasController.getOneCuentaByName) // obtener cuenta por nombre
+  .post('/addProd/:id', cuentasController.addProdToCuenta)     // agregar producto a cuenta
+  .post('/removeProd/:id', cuentasController.removeProd)       // quitar producto de cuenta
+  .post('/byStatus', cuentasController.getByStatus)            // buscar cuentas por estado
+  .get('/', cuentasController.getAllCuentas)                   // listar todas las cuentas
+  .post('/', cuentasController.createOneCuenta)                // crear nueva cuenta
+  .put('/:id', cuentasController.updateCuenta)                 // actualizar cuenta
+  .delete('/:id', verifyToken, cuentasController.deleteCuenta); // eliminar cuenta (requiere token)
 
 module.exports = router;

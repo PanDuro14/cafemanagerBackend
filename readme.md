@@ -8,3 +8,4 @@ npm i body-parser
 npm i dotenv -save
 npm i jsonwebtoken
 
+cd C:\Users\Jesus\cafemanagerf

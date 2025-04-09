@@ -1,1 +1,42 @@
+.node_modules
+
+# cafemanager-db
+Postgres cluster cafemanagerb-db created
+  Username:    postgres
+  Password:    9tR6l2rOp2afTBp
+  Hostname:    cafemanagerb-db.internal
+  Flycast:     fdaa:14:3ec8:0:1::2
+  Proxy port:  5432
+  Postgres port:  5433
+  Connection string: postgres://postgres:9tR6l2rOp2afTBp@cafemanagerb-db.flycast:5432
+
+DATABASE_URL=postgres://cafemanagerb:n4DNYo4jUP7sGUO@cafemanagerb-db.flycast:5432/cafemanagerb?sslmode=disable
+
+
+
+# comandos para fly.io: 
+  fly auth login                   -- Iniciar sesión 
+  fly deploy                       -- Actualizar versión 
+  fly status                       -- Mostrar estados de las vm
+  fly machine start 1857795c299048 -- Encender máquina virtual de la app 
+  fly machine start 683045df741968 -- Encender máquina virtual de la db 
+  fly logs                         -- Logs de la app 
+  fly ssh console                  -- Consola de la app 
+  fly secret list                  -- Ver los secrets registrados 
+  fly app list                     -- Ver las apps del usuario de fly.io
+
+
+# comandos para la consola de la app
+  apt update
+  apt install postgresql-client -y
+  psql $DATABASE_URL              -- Entrar al entorno de la db 
+  exit                            -- Salir de la consola 
+
+
+# comandos para el entorno de la db (psql)
+  \c [database name]              -- Cambiar la db (no debería hacer falta) 
+  \dt                             -- Ver las tablas de la db 
+  \d [table name]                 -- Ver las características de una tabla 
+  \q                              -- Salir 
+
 node_modules

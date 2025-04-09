@@ -1,0 +1,16 @@
+config:
+  target: "https://localhost:443"   # URL de tu servidor
+  phases:
+    - duration: 60                   # Duración de la prueba (en segundos)
+      arrivalRate: 10                # Número de usuarios nuevos por segundo
+    - duration: 60                   # Otra fase de duración
+      arrivalRate: 20                # Aumentamos la carga (20 usuarios por segundo)
+    - duration: 60                   # Fase de duración
+      arrivalRate: 50                # Más carga, hasta 50 usuarios por segundo
+  defaults:
+    headers:
+      Content-Type: "application/json"
+scenarios:
+  - flow:
+      - get:
+          url: "/"                   # Ruta que quieres probar
