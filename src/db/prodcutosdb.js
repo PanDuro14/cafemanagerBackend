@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 
-// Conexión a la base de datos
-const poolLocal = new Pool({
+// Configuración de conexión local
+const pool = new Pool({
   port: process.env.PORT_DB,
   host: process.env.HOST_DB,
   user: process.env.USER_DB,
@@ -9,28 +9,19 @@ const poolLocal = new Pool({
   database: process.env.NAME_DB,
 });
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: false
-}); 
-
 try {
-  // Intentamos conectar con la base de datos del servidor
+  // Intentamos conectar con la base de datos local
   pool.connect()
-    .then((res) => {
-      console.log('Conexión prod exitosa con productos');
+    .then(() => {
+      console.log('Conexión local exitosa conn productos');
     })
     .catch((error) => {
-      console.error('Error al conectar con productos en el servidor. Intentando conexión local...');
-      poolLocal.connect()
-        .then(() => console.log('Conexión local exitosa con productos'))
-        .catch((message) => console.log('Error al conectar con la base de datos local'));
+      console.error('Error al conectar con la base de datos local:', error);
     });
 } catch (error) {
-  // Este bloque se ejecutará si hay errores en el intento de conexión (aunque lo hemos capturado en el .catch)
-  console.error('Error general al intentar conectar a las bases de datos');
+  // Este bloque captura cualquier error general
+  console.error('Error general al intentar conectar con la base de datos local:', error);
 }
-
 // Obtener todos los productos
 const getAllProductos = async () => {
   return new Promise((resolve, reject) => {

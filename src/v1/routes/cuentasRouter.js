@@ -10,9 +10,12 @@ router
   .post('/addProd/:id', cuentasController.addProdToCuenta)     // agregar producto a cuenta
   .post('/removeProd/:id', cuentasController.removeProd)       // quitar producto de cuenta
   .post('/byStatus', cuentasController.getByStatus)            // buscar cuentas por estado
+  .get('/getOneProduct/:cuentasId/:menuId', cuentasController.getOneProduct) // obtener un prodcuto con el id de la cuenta y el id del producto
+  .post('/getOnlyOneProduct/:cuentasId/:menuId', cuentasController.getOnlyOneProduct)
   .get('/', cuentasController.getAllCuentas)                   // listar todas las cuentas
   .post('/', cuentasController.createOneCuenta)                // crear nueva cuenta
   .put('/:id', cuentasController.updateCuenta)                 // actualizar cuenta
-  .delete('/:id', verifyToken, cuentasController.deleteCuenta); // eliminar cuenta (requiere token)
+  .delete('/:id', cuentasController.deleteCuenta); // eliminar cuenta (requiere token)
+
 
 module.exports = router;

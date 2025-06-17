@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 
-// Configuración de conexión
-const poolLocal = new Pool({
+// Configuración de conexión local
+const pool = new Pool({
   port: process.env.PORT_DB,
   host: process.env.HOST_DB,
   user: process.env.USER_DB,
@@ -9,26 +9,18 @@ const poolLocal = new Pool({
   database: process.env.NAME_DB,
 });
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: false
-}); 
-
 try {
-  // Intentamos conectar con la base de datos del servidor
+  // Intentamos conectar con la base de datos local
   pool.connect()
-    .then((res) => {
-      console.log('Conexión prod exitosa con cuentas');
+    .then(() => {
+      console.log('Conexión local exitosa con cuentas');
     })
     .catch((error) => {
-      console.error('Error al conectar con cuentas en el servidor. Intentando conexión local...');
-      poolLocal.connect()
-        .then(() => console.log('Conexión local exitosa con cuentas'))
-        .catch((message) => console.log('Error al conectar con la base de datos local'));
+      console.error('Error al conectar con la base de datos local:', error);
     });
 } catch (error) {
-  // Este bloque se ejecutará si hay errores en el intento de conexión (aunque lo hemos capturado en el .catch)
-  console.error('Error general al intentar conectar a las bases de datos');
+  // Este bloque captura cualquier error general
+  console.error('Error general al intentar conectar con la base de datos local:', error);
 }
 
 // Obtener todas las cuentas
@@ -129,17 +121,95 @@ const addProdToCuenta = async (nuevoProducto, id) => {
 // Eliminar un producto del array de productos de una cuenta
 const removeProd = async (prodAEliminar, id) => {
   return new Promise((resolve, reject) => {
+    // Extraer los valores del producto a eliminar
+    const { id: prodId, tamano, nombre } = prodAEliminar[0];
+    console.log('Eliminar producto: ', prodAEliminar);
+
     const sql = `
-      UPDATE cuentas 
-      SET productos = array_remove(productos, $1)
-      WHERE id = $2 RETURNING *
+      UPDATE cuentas
+      SET productos = array(
+        SELECT producto
+        FROM unnest(productos) AS producto
+        WHERE NOT (
+          -- Convertimos la cadena JSON a JSONB para poder acceder a las propiedades
+          (producto::jsonb)->>'id' = $1 AND
+          (producto::jsonb)->>'tamano' = $2 AND
+          (producto::jsonb)->>'nombre' = $3
+        )
+      )
+      WHERE id = $4
+      RETURNING productos;  -- Devuelve el arreglo actualizado de productos
     `;
-    pool.query(sql, [JSON.stringify(prodAEliminar), id], (error, results) => {
-      if (error) return reject(error);
-      resolve(results.rowCount > 0 ? results.rows[0] : null);
+
+    pool.query(sql, [prodId, tamano, nombre, id], (error, results) => {
+      if (error) {
+        console.error('Error en la consulta SQL:', error); 
+        return reject(error);
+      }
+
+      // Verificar si los productos se actualizaron
+      if (results.rowCount > 0) {
+        console.log('Productos después de la eliminación: ', results.rows[0].productos);
+        resolve(results.rows[0].productos); // Retorna el arreglo actualizado de productos
+      } else {
+        console.log('No se encontraron productos para eliminar');
+        resolve(null); // Si no se eliminaron productos
+      }
     });
   });
 };
+
+
+const getOneProduct = async (cuentaId, menuId) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT c.productos, m.id
+      FROM cuentas c, menu m
+      WHERE c.id = $1 AND m.id = $2;
+    `; 
+    pool.query(sql, [cuentaId, menuId], (error, results) => {
+      if(error) return reject(error); 
+      resolve(results.rows ); 
+    }); 
+  }); 
+}
+
+
+const getOnlyOneProduct = async (req, res) => {
+  try {
+    const { cuentasId, menuId } = req.params;
+    const { tamano } = req.body;
+
+    if (!cuentasId || !menuId || !tamano) {
+      return res.status(400).json({ error: 'Faltan parámetros necesarios' });
+    }
+
+    const query = `
+      SELECT 
+        (SELECT productos FROM cuentas WHERE id = $1) AS productos,
+        m.id AS menu_id, p.id AS precio_id, p.tamano
+      FROM menu m
+      JOIN menu_precios p ON m.id = p.menu_id
+      WHERE m.id = $2 AND p.tamano = $3
+      LIMIT 1;
+    `;
+
+    const result = await pool.query(query, [cuentasId, menuId, tamano]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    const producto = result.rows[0];
+    res.status(200).json({ message: 'Producto encontrado', cuenta: producto });
+
+  } catch (error) {
+    console.error('Error al obtener el contenido de la cuenta:', error);
+    res.status(502).json({ error: 'Error al obtener el contenido de la cuenta' });
+  }
+};
+
+
 
 // Filtrar cuentas por estado
 const getByStatus = async (estado) => {
@@ -161,5 +231,7 @@ module.exports = {
   deleteCuenta,
   addProdToCuenta,
   removeProd,
-  getByStatus
+  getByStatus, 
+  getOneProduct,
+  getOnlyOneProduct
 };

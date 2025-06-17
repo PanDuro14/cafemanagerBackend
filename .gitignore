@@ -40,3 +40,38 @@ DATABASE_URL=postgres://cafemanagerb:n4DNYo4jUP7sGUO@cafemanagerb-db.flycast:543
   \q                              -- Salir 
 
 node_modules
+
+
+const { Pool } = require('pg'); 
+const bcrypt = require('bcryptjs'); 
+
+// Configuración de conexión a la base de datos
+const poolLocal = new Pool({
+  port: process.env.PORT_DB,
+  host: process.env.HOST_DB,
+  user: process.env.USER_DB,
+  password: process.env.PASSWORD_DB,
+  database: process.env.NAME_DB,
+});
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false
+}); 
+
+try {
+  // Intentamos conectar con la base de datos del servidor
+  pool.connect()
+    .then((res) => {
+      console.log('Conexión prod exitosa con usuarios');
+    })
+    .catch((error) => {
+      console.error('Error al conectar con usuarios en el servidor. Intentando conexión local...');
+      poolLocal.connect()
+        .then(() => console.log('Conexión local exitosa con usuarios'))
+        .catch((message) => console.log('Error al conectar con la base de datos local'));
+    });
+} catch (error) {
+  // Este bloque se ejecutará si hay errores en el intento de conexión (aunque lo hemos capturado en el .catch)
+  console.error('Error general al intentar conectar a las bases de datos');
+}

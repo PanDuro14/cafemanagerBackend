@@ -10,7 +10,7 @@ const encryptFile = (buffer, key) => {
     }
 
     const iv = crypto.randomBytes(16); // IV aleatorio de 16 bytes
-    const cipher = crypto.createCipheriv(algorithm, key, iv); // Crea el cifrador
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv); // Crea el cifrador
 
     const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);  // Cifra el buffer
     return { iv, encryptedData: encrypted };  // Retorna el IV y los datos cifrados
@@ -21,7 +21,7 @@ const decryptFile = (buffer, secretKey) => {
     const iv = buffer.slice(0, 16); // Los primeros 16 bytes corresponden al IV
     const encryptedData = buffer.slice(16); // El resto es el texto cifrado
 
-    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'utf8'), iv); // Crear el descifrador
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf8'), iv); // Crear el descifrador
 
     const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]); // Descifrar los datos
     return decrypted;

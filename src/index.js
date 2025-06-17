@@ -45,7 +45,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(apiLimiter);
 
 // Algoritmo AES-256-cbc; 
-const algoritm = 'aes-256-cbc'; 
 const secretKeyAES = crypto.randomBytes(32); 
 const iv = crypto.randomBytes(16); 
 
@@ -66,18 +65,22 @@ app.use('/api/v1/files', v1Files);
 
 const PORT = process.env.PORT || 3000; 
 
-app.get('/', isAdmin, async (req, res) => {
+app.get('/', async (req, res) => {
     res.send('Hola mundo con https '); 
 }); 
  
 // Ruta protegida de prueba
-app.use('/api/v1/admin', ipFilter, (req, res) => {
+app.use('/api/v1/admin',  isAdmin, (req, res) => {
   res.send('Área protegida'); 
+}); 
+
+app.use('/verifyToken', verifyToken, (req, res) => {
+  res.send('Usuario verificado'); 
 }); 
 
 // Función para cifrar 
 function encrypt(text){
-  const cipher = crypto.createCipheriv(algoritm, secretKeyAES, iv); 
+  const cipher = crypto.createCipheriv("AES-128-CBC", key, iv); 
   let encrypted = cipher.update(text, 'utf8', 'hex'); 
   encrypted += cipher.final('hex'); 
   return { encryptedData: encrypted, iv: iv.toString('hex')}; 
@@ -85,7 +88,8 @@ function encrypt(text){
 
 // Función para descifrar 
 function decrypt(encryptedData, ivHex){
-  const decipher = crypto.createDecipheriv(algoritm, secretKeyAES, Buffer.from(ivHex, 'hex')); 
+  
+  const decipher = crypto.createDecipheriv("AES-128-CBC", secretKeyAES, Buffer.from(ivHex, 'hex')); 
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8'); 
   decrypted += decipher.final('utf8'); 
   return decrypted; 
@@ -143,6 +147,6 @@ const options = {
 //  console.log('Servidor https funcionando en https://localhost:443 ')
 //}); 
 
-app.listen(8000, () => {
+app.listen(PORT || 8000, () => {
     console.log(`Puerto escuchado en: ${PORT} :D`); 
 });

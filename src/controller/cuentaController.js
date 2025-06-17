@@ -113,6 +113,9 @@ const removeProd = async (req, res) => {
     const { prodAEliminar } = req.body;
     const { id } = req.params;
 
+    // Comprobar producto a eliminar
+    console.log('Producto a eliminar: ', prodAEliminar); 
+
     if (!prodAEliminar || Object.keys(prodAEliminar).length === 0) {
       return res.status(400).json({ error: 'El producto a eliminar no puede estar vacío' });
     }
@@ -129,6 +132,62 @@ const removeProd = async (req, res) => {
     res.status(502).json({ error: 'Error al editar el contenido de la cuenta' });
   }
 };
+
+const getOneProduct = async (req, res) => {
+  try {
+    const { cuentasId, menuId } = req.params;
+
+    if (!cuentasId) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+
+    if (!menuId) {
+      return res.status(404).json({ error: 'Producto en la cuenta no encontrado' });
+    }
+
+    const cuenta = await cuentasProcess.getOneProduct(cuentasId, menuId);
+    console.log('cuenta id:', cuentasId, ' menuId: ', menuId, ' cuenta: ', cuenta); 
+    res.status(200).json({ message: 'Cuenta y producto encontrado', cuenta });
+    
+  } catch (error) {
+    console.error('Error al obtener el contenido de la cuenta:', error);
+    res.status(502).json({ error: 'Error al obtener el contenido de la cuenta' });
+  }
+}
+
+const getOnlyOneProduct = async (req, res) => {
+  try {
+    const { cuentasId, menuId } = req.params;  // Obtiene los parámetros de la URL
+    const { tamano } = req.body;  // Obtiene el parámetro de la consulta en la URL
+
+    console.log('cuentasId:', cuentasId);
+    console.log('menuId:', menuId);
+    console.log('tamano:', tamano);
+
+    // Verificar los parámetros
+    if (!cuentasId || !menuId || !tamano) {
+      return res.status(400).json({ error: 'Faltan parámetros necesarios' });
+    }
+
+    // Llamar al servicio que ejecuta la consulta SQL
+    const cuenta = await cuentasProcess.getOnlyOneProduct(cuentasId, menuId, tamano);
+
+    if (!cuenta) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    // Enviar la respuesta si todo está correcto
+    res.status(200).json({ message: 'Producto encontrado', cuenta });
+
+  } catch (error) {
+    console.error('Error al obtener el contenido de la cuenta:', error);
+    res.status(502).json({ error: 'Error al obtener el contenido de la cuenta' });
+  }
+};
+
+
+
+
 
 // Obtener cuentas por estado (ej: activa, pagada)
 const getByStatus = async (req, res) => {
@@ -159,5 +218,7 @@ module.exports = {
   deleteCuenta,
   addProdToCuenta, 
   removeProd, 
-  getByStatus
+  getByStatus, 
+  getOneProduct, 
+  getOnlyOneProduct
 };
