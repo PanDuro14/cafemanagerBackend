@@ -63,6 +63,6 @@ const options = {
 //  console.log('Servidor https funcionando en https://localhost:443 ')
 //}); 
 
-app.listen(PORT || 8000, () => {
-    console.log(`Puerto escuchado en: ${PORT} :D`); 
+app.listen(PORT || 8000, '0.0.0.0', () => {
+    console.log(`Servidor escuchado en: ${PORT} :D`); 
 });
