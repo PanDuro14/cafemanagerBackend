@@ -48,6 +48,16 @@ const removeProd = async (prodAEliminar, id) => {
   return cuenta; 
 }
 
+const updateProduct = async (updatedProd, id) => {
+  const cuenta = await cuentaService.updateProduct(updatedProd, id); 
+  return cuenta; 
+}
+
+const updateTotal = async (nuevoPrecio, id) => {
+  const cuenta = await cuentaService.updateTotal(nuevoPrecio, id); 
+  return cuenta; 
+}
+
 const getOneProduct = async(cuentaId, menuId) => {
   const cuenta = await cuentaService.getOneProduct(cuentaId, menuId); 
   return cuenta;
@@ -75,5 +85,7 @@ module.exports = {
   removeProd, 
   getByStatus, 
   getOneProduct,
-  getOnlyOneProduct
+  getOnlyOneProduct, 
+  updateTotal, 
+  updateProduct
 }

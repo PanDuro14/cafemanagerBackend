@@ -133,6 +133,48 @@ const removeProd = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res) => {
+  try {
+    const { updatedProd } = req.body; 
+    const { id } = req.params; 
+
+    if(!updatedProd || Object.keys(updatedProd).length === 0){
+      console.log('Producto actualizado: ', updatedProd); 
+      return res.status(400).json({ error: 'El producto no puede estar vacio' }); 
+    }
+
+    const cuenta = await cuentasProcess.updateProduct(updatedProd, id); 
+
+    if(cuenta){
+      res.status(200).json({ error: 'Producto actualizado ', cuenta }); 
+    } else {
+      res.status(404).json({ error: 'Cuenta no encontrada'});
+    }
+  } catch (error){
+    console.error('Error al editar el contenido de la cuenta ', error);
+    res.status(502).json({ error: 'Error al editar el contenido de la cuenta '});
+  }
+}
+
+const updateTotal = async (req, res) => {
+  try {
+    const { nuevoPrecio } = req.body; 
+    const { id } = req.params; 
+
+    if(!nuevoPrecio ) return res.status(400).json({ error: 'Nuevo precio faltante '}); 
+    if(!id) return res.status(400).json({ error: 'Id faltante'}); 
+
+    const cuenta = await cuentasProcess.updateTotal(nuevoPrecio, id); 
+    if(cuenta) {
+      res.status(200).json({ cuenta }); 
+    } else {
+      return res.status(404).json({ error: 'Nuevo precio no encontrado '}); 
+    }
+  } catch (error){
+    res.status(502).json({ error: 'Error al actualizar el precio total'}); 
+  }
+}
+
 const getOneProduct = async (req, res) => {
   try {
     const { cuentasId, menuId } = req.params;
@@ -185,10 +227,6 @@ const getOnlyOneProduct = async (req, res) => {
   }
 };
 
-
-
-
-
 // Obtener cuentas por estado (ej: activa, pagada)
 const getByStatus = async (req, res) => {
   try {
@@ -220,5 +258,7 @@ module.exports = {
   removeProd, 
   getByStatus, 
   getOneProduct, 
-  getOnlyOneProduct
+  getOnlyOneProduct, 
+  updateTotal, 
+  updateProduct
 };

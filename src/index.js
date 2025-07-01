@@ -2,17 +2,12 @@ require('dotenv').config();
 const express = require('express'); 
 const bodyparser = require('body-parser'); 
 const cors = require('cors'); 
-const crypto = require('crypto'); 
 const https = require('https'); 
 const fs = require('fs'); 
-
-// límite de peticiones: 
-const rateLimit = require('express-rate-limit');
 
 const ipFilter = require('./middlewares/ipFilter'); 
 const isAdmin = require('./middlewares/isAdminMiddleware'); 
 const verifyToken = require('./middlewares/authMiddleware'); 
-
 
 const app = express(); 
 const corsOptions = {
@@ -23,31 +18,11 @@ const corsOptions = {
     optionSuccessStatus:200,
 }
 
-// límite de peticiones 
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 peticiones por IP
-  message: {
-    success: false,
-    message: "Demasiadas peticiones. Intenta más tarde.",
-  },
-  standardHeaders: true, // Devuelve headers tipo `RateLimit-*`
-  legacyHeaders: false, // Desactiva `X-RateLimit-*` (obsoleto)
-});
-
-
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
 app.use(bodyparser.json()); 
-
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true })); 
-app.use(apiLimiter);
-
-// Algoritmo AES-256-cbc; 
-const secretKeyAES = crypto.randomBytes(32); 
-const iv = crypto.randomBytes(16); 
-
+app.options('*', cors(corsOptions)); 
 
 // Routing de apis 
 const v1User = require('./v1/routes/userRouter');
@@ -69,7 +44,6 @@ app.get('/', async (req, res) => {
     res.send('Hola mundo con https '); 
 }); 
  
-// Ruta protegida de prueba
 app.use('/api/v1/admin',  isAdmin, (req, res) => {
   res.send('Área protegida'); 
 }); 
@@ -77,64 +51,6 @@ app.use('/api/v1/admin',  isAdmin, (req, res) => {
 app.use('/verifyToken', verifyToken, (req, res) => {
   res.send('Usuario verificado'); 
 }); 
-
-// Función para cifrar 
-function encrypt(text){
-  const cipher = crypto.createCipheriv("AES-128-CBC", key, iv); 
-  let encrypted = cipher.update(text, 'utf8', 'hex'); 
-  encrypted += cipher.final('hex'); 
-  return { encryptedData: encrypted, iv: iv.toString('hex')}; 
-}
-
-// Función para descifrar 
-function decrypt(encryptedData, ivHex){
-  
-  const decipher = crypto.createDecipheriv("AES-128-CBC", secretKeyAES, Buffer.from(ivHex, 'hex')); 
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8'); 
-  decrypted += decipher.final('utf8'); 
-  return decrypted; 
-}
-
-// wea del método de pago (no oficial (obviamente))
-app.post('/api/payment', (req, res) => {
-    const { cardholderName, cardNumber, expiryDate, cvv } = req.body;
-  
-    if (!cardholderName || !cardNumber || !expiryDate || !cvv) {
-      return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
-    }
-  
-    if (!/^\d{16}$/.test(cardNumber)) {
-      return res.status(400).json({ success: false, message: 'Número de tarjeta inválido' });
-    }
-  
-    const [month, year] = expiryDate.split('/').map(Number);
-    const expiryDateObj = new Date(`20${year}`, month - 1);
-    const today = new Date();
-    if (expiryDateObj <= today) {
-      return res.status(400).json({ success: false, message: 'La tarjeta ha expirado' });
-    }
-  
-    if (!/^\d{3}$/.test(cvv)) {
-      return res.status(400).json({ success: false, message: 'CVV inválido' });
-    }
-
-    // Cifrar el numero de tarjeta antes de #almacenarlo", 
-    const { encryptedData, iv } = encrypt(cardNumber, cvv); 
-  
-    // Simulamos que guardamos los datos cifrados
-    const paymentData = {
-      cardholderName, 
-      encryptedCardNumber: encryptedData, 
-      expiryDate, 
-      encryptedCvv: cvv, 
-      iv
-    }; 
-
-    // Simulamos el guardado en la base de datos 
-    console.log(paymentData); 
-  
-    return res.json({ success: true, message: 'Pago procesado exitosamente' });
-  });
 
 // Propiedad de Jesús Morales 
 

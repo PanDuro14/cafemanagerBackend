@@ -48,6 +48,18 @@ const removeProd = async (prodAEliminar, id) => {
   return cuenta; 
 }
 
+// Actializar un producto de la cuenta 
+const updateProduct = async (updatedProd, id) => {
+  const cuenta = await cuentasdb.updateProduct(updatedProd, id); 
+  return cuenta; 
+}
+
+// Actualizar precio total 
+const updateTotal = async(nuevoPrecio, id) => {
+  const cuenta = await cuentasdb.updateTotal(nuevoPrecio, id); 
+  return cuenta; 
+}
+
 const getOneProduct = async (cuentaId, menuId) => {
   const cuenta = await cuentasdb.getOneProduct(cuentaId, menuId); 
   return cuenta; 
@@ -75,5 +87,7 @@ module.exports = {
   removeProd, 
   getByStatus, 
   getOneProduct,
-  getOnlyOneProduct
+  getOnlyOneProduct, 
+  updateTotal, 
+  updateProduct
 }

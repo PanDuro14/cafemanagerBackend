@@ -1,27 +1,26 @@
-const { Pool } = require('pg');
+const dbConnection = require('./dbConection'); 
+const dbLocal = require('./dbConectionLocal'); 
 
-// Configuración de conexión local
-const pool = new Pool({
-  port: process.env.PORT_DB,
-  host: process.env.HOST_DB,
-  user: process.env.USER_DB,
-  password: process.env.PASSWORD_DB,
-  database: process.env.NAME_DB,
-});
+let pool; 
 
-try {
-  // Intentamos conectar con la base de datos local
-  pool.connect()
-    .then(() => {
-      console.log('Conexión local exitosa con cuentas');
-    })
-    .catch((error) => {
-      console.error('Error al conectar con la base de datos local:', error);
-    });
-} catch (error) {
-  // Este bloque captura cualquier error general
-  console.error('Error general al intentar conectar con la base de datos local:', error);
-}
+(async () => {
+  try {
+    await dbConnection.connect(); 
+    console.log('Conexión con la db remota exitosa: Cuentas'); 
+    pool = dbConnection; 
+  } catch (errRemota){
+    console.warn('Error con la db remota. Intentando conexión local... ', errRemota.message); 
+
+    try {
+      await dbLocal.connect(); 
+      console.log('Conexión con la db local exitosa: Cuentas'); 
+      pool = dbLocal; 
+    } catch (errLocal){
+      console.error('Error al conectar con la db local: ', errLocal.message); 
+    }
+  }
+})(); 
+
 
 // Obtener todas las cuentas
 const getAllCuentas = async () => {
@@ -159,6 +158,55 @@ const removeProd = async (prodAEliminar, id) => {
   });
 };
 
+const updateProduct = async (updatedProd, id) => {
+  return new Promise((resolve, reject) => { 
+    const { id: prodId, tamano, cantidad } = updatedProd[0]; 
+    console.log('Prod a actualizar: ', updatedProd);
+
+    const sql = `
+      UPDATE cuentas
+      SET productos = array(
+        SELECT 
+          CASE
+            WHEN (producto::jsonb)->>'id' = $1 AND 
+                 (producto::jsonb)->>'tamano' = $2  -- Comprobamos id y tamano como texto
+            THEN 
+              jsonb_set(producto::jsonb, '{cantidad}', to_jsonb($3::numeric))  -- Convertimos cantidad a jsonb
+            ELSE producto::jsonb  -- Mantenemos el producto sin cambios si no coincide
+          END
+        FROM unnest(productos) AS producto
+      )
+      WHERE id = $4
+      RETURNING productos;
+    `;
+
+    pool.query(sql, [prodId, tamano, cantidad, id], (error, results) => {
+      if (error) {
+        return reject(error);  // Si hay error, lo rechazamos
+      }
+
+      // Verificar si se actualizó el producto
+      if (results.rowCount > 0) {
+        resolve(results.rows[0].productos); // Devolver los productos actualizados
+      } else {
+        resolve(null); // No se encontró ninguna fila para actualizar
+      }
+    });
+  });
+};
+
+
+
+// Actualizar precio total 
+const updateTotal = async (nuevoPrecio, id) => {
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE cuentas SET precio_total = $1 WHERE id = $2`; 
+    pool.query(sql, [nuevoPrecio, id], (error, result) => {
+      if(error) reject(error); 
+      resolve('Precio actualizado '); 
+    }); 
+  }); 
+}
 
 const getOneProduct = async (cuentaId, menuId) => {
   return new Promise((resolve, reject) => {
@@ -209,8 +257,6 @@ const getOnlyOneProduct = async (req, res) => {
   }
 };
 
-
-
 // Filtrar cuentas por estado
 const getByStatus = async (estado) => {
   return new Promise((resolve, reject) => {
@@ -233,5 +279,7 @@ module.exports = {
   removeProd,
   getByStatus, 
   getOneProduct,
-  getOnlyOneProduct
+  getOnlyOneProduct, 
+  updateTotal,
+  updateProduct
 };

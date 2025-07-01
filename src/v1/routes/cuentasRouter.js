@@ -11,7 +11,8 @@ router
   .post('/removeProd/:id', cuentasController.removeProd)       // quitar producto de cuenta
   .post('/byStatus', cuentasController.getByStatus)            // buscar cuentas por estado
   .get('/getOneProduct/:cuentasId/:menuId', cuentasController.getOneProduct) // obtener un prodcuto con el id de la cuenta y el id del producto
-  .post('/getOnlyOneProduct/:cuentasId/:menuId', cuentasController.getOnlyOneProduct)
+  .post('/updateProd/:id', cuentasController.updateProduct)    // Actualizar un producto
+  .post('/updateTotal/:id', cuentasController.updateTotal)     // Actualizar el precio total
   .get('/', cuentasController.getAllCuentas)                   // listar todas las cuentas
   .post('/', cuentasController.createOneCuenta)                // crear nueva cuenta
   .put('/:id', cuentasController.updateCuenta)                 // actualizar cuenta
