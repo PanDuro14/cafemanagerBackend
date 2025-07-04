@@ -39,6 +39,29 @@ DATABASE_URL=postgres://cafemanagerb:n4DNYo4jUP7sGUO@cafemanagerb-db.flycast:543
   \d [table name]                 -- Ver las características de una tabla 
   \q                              -- Salir 
 
+
+# 
+ssh -i "C:\Users\Jesus\OneDrive\Documentos\cafe\cafemanager-pass-server.pem" ubuntu@18.118.254.1777
+dentro del servidor: 
+sudo apt update 
+sudo apt install nodejs npm git -y 
+
+git clone https://github.com/PanDuro14/cafemanagerBackend.git
+cd cafemanagerBackend
+npm i
+
+sudo npm i -g pm2 
+pm2 start npm --name cafemanager --run dev
+pm2 save
+pm2 startup
+pm2 list
+pm2 stop cafemanager
+
+sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u ubuntu --hp /home/ubuntu
+
+
+http://18.118.254.177:8000
+http://18.118.254.177:8000
 node_modules
 
 

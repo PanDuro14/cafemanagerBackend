@@ -60,6 +60,18 @@ const updateTotal = async(nuevoPrecio, id) => {
   return cuenta; 
 }
 
+// Actualizar estado 
+const updateEstado = async(nuevoEstado, id) => {
+  const cuenta = await cuentasdb.updateEstado(nuevoEstado, id); 
+  return cuenta; 
+}
+
+// Actualizar metodo de pago
+const updateMetodoPago = async(nuevoMetodo, id) => {
+  const cuenta = await cuentasdb.updateMetodoPago(nuevoMetodo, id); 
+  return cuenta; 
+}
+
 const getOneProduct = async (cuentaId, menuId) => {
   const cuenta = await cuentasdb.getOneProduct(cuentaId, menuId); 
   return cuenta; 
@@ -89,5 +101,7 @@ module.exports = {
   getOneProduct,
   getOnlyOneProduct, 
   updateTotal, 
-  updateProduct
+  updateProduct, 
+  updateEstado,
+  updateMetodoPago,
 }

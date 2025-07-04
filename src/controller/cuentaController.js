@@ -175,6 +175,45 @@ const updateTotal = async (req, res) => {
   }
 }
 
+const updateEstado = async (req, res) => {
+  try {
+    const { nuevoEstado } = req.body; 
+    const { id } = req.params; 
+
+    if(!nuevoEstado) return res.status(400).json({error: 'nuevoEstado faltante D:'}); 
+    if(!id) return res.status(400).json({error: 'Id faltante'}); 
+
+    const cuenta = await cuentasProcess.updateEstado(nuevoEstado, id);
+    if(cuenta){
+      res.status(200).json({ cuenta }); 
+    } else {
+      res.status(404).json({ error: 'Cuenta no encontrada'}); 
+    }
+  } catch (error){
+    res.status(502).json({ error: 'Error al actualizar el estado'}); 
+    console.log(error); 
+  }
+}
+
+const updateMetodoPago = async (req, res) => {
+  try {
+    const { nuevoMetodo } = req.body; 
+    const { id } = req.params; 
+
+    if(!nuevoMetodo) return res.status(400).json({error: 'Nuevo no faltante D:'}); 
+    if(!id) return res.status(400).json({error: 'Id faltante'}); 
+
+    const cuenta = await cuentasProcess.updateMetodoPago(nuevoMetodo, id);
+    if(cuenta){
+      res.status(200).json({ cuenta }); 
+    } else {
+      res.status(404).json({ error: 'Cuenta no encontrada'}); 
+    }
+  } catch (error){
+    res.status(502).json({ error: 'Error al actualizar el metodo de pago'}); 
+  }
+}
+
 const getOneProduct = async (req, res) => {
   try {
     const { cuentasId, menuId } = req.params;
@@ -260,5 +299,7 @@ module.exports = {
   getOneProduct, 
   getOnlyOneProduct, 
   updateTotal, 
-  updateProduct
+  updateProduct, 
+  updateEstado,
+  updateMetodoPago,
 };

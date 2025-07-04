@@ -195,8 +195,6 @@ const updateProduct = async (updatedProd, id) => {
   });
 };
 
-
-
 // Actualizar precio total 
 const updateTotal = async (nuevoPrecio, id) => {
   return new Promise((resolve, reject) => {
@@ -207,6 +205,29 @@ const updateTotal = async (nuevoPrecio, id) => {
     }); 
   }); 
 }
+
+// Actualizar estado
+const updateEstado = async(nuevoEstado, id) => {
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE cuentas SET estado = $1 WHERE id = $2`; 
+    pool.query(sql, [nuevoEstado, id], (error, result) => {
+      if(error) reject(error) ; 
+      resolve('Estado actualizado'); 
+    }); 
+  }); 
+}
+
+// Actualizar metodo de pago
+const updateMetodoPago = async(nuevoMetodo, id) => {
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE cuentas SET metodo_pago = $1 WHERE id = $2`;
+    pool.query(sql, [nuevoMetodo, id], (error, result) => {
+      if(error) reject(error) ; 
+      resolve('Metodo de pago actualizado'); 
+    }); 
+  }); 
+}
+
 
 const getOneProduct = async (cuentaId, menuId) => {
   return new Promise((resolve, reject) => {
@@ -281,5 +302,7 @@ module.exports = {
   getOneProduct,
   getOnlyOneProduct, 
   updateTotal,
-  updateProduct
+  updateProduct,
+  updateEstado,
+  updateMetodoPago,
 };
